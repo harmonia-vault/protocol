@@ -54,3 +54,29 @@ Linux 原生 SPAKE2、Windows cgo ABI、iOS 真机/模拟器配对均未跑。An
 | Android 上游原语测试、Go 配对测试运行、Flutter 桥接 | 未跑，不计为 Android 运行通过 |
 
 产物仅在 `core-go/pairing` 的 Git 忽略目录保存，没有公开二进制或用户数据。该记录不改变 macOS 实测范围，也不补足 Android 运行、iOS、Windows 或生产安全验收。
+
+## 多管理签发者证明新增切片
+
+2026-10-02 20:09 UTC：Go `core-go/cryptox/mise run test-issuer-proof` 7 项、29 个子测通过；Node `protocol/mise run test` 共 14 项通过，新增 4 项独立互操作验证。真实 HPKE/AEAD 正例覆盖 C 验解 A 历史数据和含旧 v2 节点的 D 接收钥绑定。全部密钥和账号均为公开合成值。
+
+本轮后续已接入独立 v2 Go 客户端、逐环境 verifier、完整受保护回执与后台重验；旧 v1 单 pin 不扩大信任。非根新环境和跨版本轮换来源仍未支持。完整编码、信任锚与已跑/未跑边界见 [ISSUER-PROOF.md](ISSUER-PROOF.md)。
+
+
+### v2 Go 正式接入新增验证
+
+2026-10-02 20:33 UTC 后，本机 Go 1.26.4，固定 BoringSSL profile 不变：
+
+| 命令/测试 | 实际结果 |
+| --- | --- |
+| syncclient `mise run test-issuer` | 6 项主测试、21 个子测通过；其中新增 v2 为 4 项、17 个子测 |
+| syncclient `mise run test-native-enrollment` | 2 项主测试、5 个子测通过；原 v1 2 个和新 v2 正确码/错误码/降级 3 个子测 |
+| syncclient `mise run test-native-enrollment-race` | 通过 |
+| cmd/harmonia `TestProtectedV2ReceiptRestartRejectsProofAndGlobalManagers` | 通过，含 4 个拒绝子测，真实临时加密目录重开 |
+| localkeys `TestTrustV2FreezesScopedReceiptAndForbidsManagerExpansion` | 通过，含 4 个拒绝子测；证明不变，仅允许 accepted 前进 |
+| core-go `mise run test` | 全包通过，v1 回归保留 |
+| core-go `mise run cross-compile` | macOS arm64、Linux amd64、Windows amd64 默认 CLI 构建通过；不是平台运行验收 |
+| core-go `mise run test-race` | 本组件、syncclient/cmd/localkeys 等通过，但该次 localipc 原有并发断线测试失败：`invalid IPC protocol`；已交对应组件，不能将该次全包标通过 |
+
+首次新增过期测试误将已未授权的历史事件放入响应，正式 verifier 按预期拒绝；测试已改用服务器应返回的无未授权事件响应，验证环境被清除后通过。真实 PAKE 测试初次使用静态未来时间，超过本机挑战最大期限而正确拒绝；改为当前短时挑战后重跑通过，生产算法与期限检查未弱化。
+
+父任务的 TypeScript/SQLite/Go 多管理真实配对及后台进程结果由 workspace 另记。本表不声称手机多管理界面、Android/iOS/Windows 全流程、非根新建环境与跨密钥版本来源或生产安全审计已经完成。
