@@ -1,1 +1,6 @@
 [tools]
+node = "24.16.0"
+
+[tasks.test]
+description = "验证 Go/Node 规范签名字节和篡改拒绝"
+run = "node --test tests/*.test.ts"
