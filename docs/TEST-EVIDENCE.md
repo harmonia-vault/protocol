@@ -36,6 +36,21 @@ Go 1.26.4、Node 24.16.0；原生构建使用 CMake 3.31.8、Ninja 1.12.1、Appl
 
 ## 尚未由本组件验收
 
-Linux 原生 SPAKE2、Windows cgo ABI、Android NDK、iOS 真机/模拟器配对均未跑。手机原生强认证和钥保护、完整客户端管理授权历史/检查点核验、邮箱重置流程、虚拟机无人登录系统服务、Workers Argon2 实际资源、生产持久化/部署及独立安全审计也未由本组件验收。服务器已有受限恢复、原子轮换与入网状态实现，不能据此把手机与三平台完整流程标为完成。
+Linux 原生 SPAKE2、Windows cgo ABI、iOS 真机/模拟器配对均未跑。Android arm64 静态库和 Go 完整链接已经通过，Android 配对运行仍未跑。手机原生强认证和钥保护、完整客户端管理授权历史/检查点核验、邮箱重置流程、虚拟机无人登录系统服务、Workers Argon2 实际资源、生产持久化/部署及独立安全审计也未由本组件验收。服务器已有受限恢复、原子轮换与入网状态实现，不能据此把手机与三平台完整流程标为完成。
 
 某个原语或本机流程测试通过，不能宣称 Harmonia 生产可用。
+
+## Android arm64 新增编译记录
+
+2026-10-02 18:58 UTC，本轮使用已安装并校验的 NDK 28.2.13676358、Clang 19.0.1、API 21、CMake 3.31.8 和 Ninja 1.12.1，保持 BoringSSL 固定提交与 SPAKE2 profile 不变：
+
+| 验证 | 结果 |
+| --- | --- |
+| `mise run native-build-android <NDK目录> <固定源码目录>` | 通过，生成 PIC、`c++_static` 的 arm64-v8a 静态库 |
+| `llvm-nm` 检查 SPAKE2 四个公共符号 | 通过，均为 `HARMONIA_BSSL_` 前缀 |
+| 静态库对象头 | ELF64 / AArch64 / REL |
+| `mise run test-android-compile <NDK目录>` | 通过，实际选中原生 cgo 包装器，Go 测试二进制完整链接 |
+| Go 测试二进制头 | ELF64 / AArch64 / DYN |
+| Android 上游原语测试、Go 配对测试运行、Flutter 桥接 | 未跑，不计为 Android 运行通过 |
+
+产物仅在 `core-go/pairing` 的 Git 忽略目录保存，没有公开二进制或用户数据。该记录不改变 macOS 实测范围，也不补足 Android 运行、iOS、Windows 或生产安全验收。

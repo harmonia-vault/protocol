@@ -1,6 +1,6 @@
 # 设备配对协议与当前验收范围
 
-配对实现位于 `core-go/pairing`，使用固定版本的 BoringSSL SPAKE2 原语和标准 HKDF-SHA256/HMAC-SHA256 密钥确认。当前是 macOS 原生验证内核。服务器已增加中继与原子证书入网实现，完整手机批准与客户端请求流程仍待共同验收，不能宣称生产可用。
+配对实现位于 `core-go/pairing`，使用固定版本的 BoringSSL SPAKE2 原语和标准 HKDF-SHA256/HMAC-SHA256 密钥确认。当前 macOS 原生运行已验证，Android arm64 已验证静态库构建和 Go 完整链接；Android 运行尚未验收。服务器已增加中继与原子证书入网实现，完整手机批准与客户端请求流程仍待共同验收，不能宣称生产可用。
 
 ## 实现选型
 
@@ -109,7 +109,8 @@ mise run test-default-cross
 | macOS arm64、Apple Clang 21、固定 BoringSSL 官方测试 | 6/6 通过：正常交换、旧端兼容、错误密码、错误身份和消息逐位篡改 |
 | Go 默认构建 | 3/3 通过：上下文、短码、默认关闭和应用层静态向量；三平台 CGO=0 包交叉构建通过 |
 | macOS arm64 原生包装器 | 11/11 通过，含 12 个上下文字段子测：双向确认、取钥门槛、错误短码、反射、跨会话重放、过期、错误长度、确认篡改与已确认摘要导出门槛；Go race detector 通过 |
-| Linux 原生、Windows、Android NDK、iOS 真机/模拟器 | 未跑；不能声明支持或验收通过 |
+| Android arm64，NDK 28.2.13676358 / Clang 19.0.1 / API 21 | 固定 BoringSSL 静态库构建通过；Go 配对测试二进制完整链接通过；符号前缀与 ELF64/AArch64 已检查。未在 Android 运行 |
+| Linux 原生、Windows、iOS 真机/模拟器 | 未跑；不能声明支持或验收通过 |
 | 手机角色确认、Go/Flutter 桥接与完整请求流程 | 未联合本原生包完成端到端验收；服务器已有中继和原子批准状态实现 |
 
 固定提交的[官方测试源码](https://boringssl.googlesource.com/boringssl/+/fab96f87245d7c6b941515201843665122650b88/crypto/curve25519/spake25519_test.cc) 仍有添加固定 SPAKE2 向量的 TODO。公共 API 无注入随机源的标准向量入口；本实现没有修改上游随机数或复制群运算来伪造标准测试。`protocol/vectors/pairing-application-v1.json` 是独立 Node 标准 crypto 生成、Go 验证的应用层编码、HKDF/HMAC 固定向量；其中原始钥和两条消息均为合成字节，不是有效 SPAKE2 交换或 RFC 9382 向量。这一原语固定向量缺口明确保留。
@@ -118,4 +119,19 @@ mise run test-default-cross
 
 Go 与 Flutter 共用同一配对内核，Flutter 桥接只传递公开消息、输入的短码和最终授权操作，不重写 PAKE。Android 应针对 `arm64-v8a` 和需要的模拟器 ABI 自行编译固定 BoringSSL，静态链接并保留符号前缀及许可证，再验证 NDK C++ 运行时、cgo 指针生命周期和全套负向测试。iOS 分别构建设备与模拟器静态库，并验收系统认证后的本地钥解锁流程。
 
-Windows 官方构建使用 MSVC/Windows SDK/NASM；Go cgo 的工具链和静态库 ABI 接入尚未完成。当前 Windows 包保持关闭，需要实际 Windows 适配和运行测试后才能开放。Android/iOS 在包装器中有候选链接布局，尚未验证 flags 或发布产物。上游[构建说明](https://boringssl.googlesource.com/boringssl/+/fab96f87245d7c6b941515201843665122650b88/BUILDING.md) 只能证明上游提供构建途径，不能代替 Harmonia 三平台验收。
+Windows 官方构建使用 MSVC/Windows SDK/NASM；Go cgo 的工具链和静态库 ABI 接入尚未完成。当前 Windows 包保持关闭，需要实际 Windows 适配和运行测试后才能开放。Android arm64 的候选静态链接布局已验证，Android 运行及 iOS flags、原生运行仍未验证。上游[构建说明](https://boringssl.googlesource.com/boringssl/+/fab96f87245d7c6b941515201843665122650b88/BUILDING.md) 只能证明上游提供构建途径，不能代替 Harmonia 三平台验收。
+
+## Android 构建复现
+
+已安装 NDK 28.2.13676358 后，在 `core-go/pairing` 执行：
+
+```sh
+mise run native-build-android /path/to/ndk/28.2.13676358
+mise run test-android-compile /path/to/ndk/28.2.13676358
+```
+
+构建使用 NDK 官方 CMake toolchain、`arm64-v8a`、API 21、`c++_static`、PIC 和既有 `HARMONIA_BSSL` 前缀。固定版本不符时拒绝，不自动安装或修改已有工具链。上游源码仍固定同一提交；可选源码目录与本机构建具有相同的提交和干净状态检查。
+
+Go 交叉编译使用 Android/arm64/cgo 和 `harmonia_boringssl` 标签，NDK Clang 目标为 `aarch64-linux-android21`。Android 同时满足 Go 的 `linux` 构建约束，已实际确认选择 `native_boringssl.go`；完整链接验证了 `-lc++_static -lc++abi` 布局。二进制仅在 Git 忽略目录 `native/` 和 `.cache/` 保存，公开源码不包含静态库、测试 ELF、NDK 或上游源码副本。
+
+这个任务没有执行交叉编译的原语或 Go 测试，也没有调用 Flutter 桥。Android 运行和环境、角色、期限的批准页面联合验收仍是独立门槛。复现依据：[NDK CMake](https://developer.android.com/ndk/guides/cmake)、[NDK Clang 交叉编译](https://developer.android.com/ndk/guides/other_build_systems)、[Go 构建约束](https://pkg.go.dev/cmd/go#hdr-Build_constraints)。
