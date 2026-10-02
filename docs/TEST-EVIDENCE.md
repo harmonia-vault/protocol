@@ -80,3 +80,41 @@ Linux 原生 SPAKE2、Windows cgo ABI、iOS 真机/模拟器配对均未跑。An
 首次新增过期测试误将已未授权的历史事件放入响应，正式 verifier 按预期拒绝；测试已改用服务器应返回的无未授权事件响应，验证环境被清除后通过。真实 PAKE 测试初次使用静态未来时间，超过本机挑战最大期限而正确拒绝；改为当前短时挑战后重跑通过，生产算法与期限检查未弱化。
 
 父任务的 TypeScript/SQLite/Go 多管理真实配对及后台进程结果由 workspace 另记。本表不声称手机多管理界面、Android/iOS/Windows 全流程、非根新建环境与跨密钥版本来源或生产安全审计已经完成。
+
+
+## 环境来源与证明 v2 新增验证
+
+2026-10-02 22:14 UTC，本组件实际使用 Go 1.26.4、Node 24.16.0；全部为公开合成材料，未扫描宿主环境。
+
+| 命令/范围 | 实际结果 |
+| --- | --- |
+| protocol `mise run test` | 17/17 通过；新增 3 项来源17项/proof9项/证书v3互操作与篡改拒绝 |
+| core-go 定向 `TestEnvironmentOrigin|TestIssuerProofV2|TestIssuerOrigin|TestStrictJSON` | crypto 6 主/34 子、syncclient 5 主/27 子通过 |
+| core-go `go test ./cryptox ./syncclient ./localkeys ./cmd/harmonia -count=1`（经 mise） | 四包全部通过 |
+| core-go `git diff --check` | 通过 |
+
+覆盖临时管理者轮换保留永久 Admin/RO 的双父来源、非根新建来源、公钥/代际/图冲突/缺证据拒绝、精确初始化锚、sealed save 失败不留下部分账本、重启重验、暂停撤销而数据序号/SeenMutations 不动、旧缓存扩权拒绝、重复键/未知字段/UTF-8/深度/大小/尾随 JSON 拒绝、空数组 `[]` 与 missing/null 区别。
+
+此前本轮一次全包普通与 race 测试通过；此表不把随后新增的环境事件 outer origin 修改算入该次结果。最终稳定来源 slice 的全包 race 和三平台默认构建仍须重跑。真实 workspace 来源验收已走到 B 创建 Y、C 仅 Y RO、原回执丢响应重启；轮换拉取完整 manifest 依赖和旧 v2 手机第二设备历史 writer 闭包仍在联调，不能把阶段进度标为全闭环通过。Android/native 和其它组件的独立结果由对应文档记录。
+
+
+### 最终来源与缓存回归
+
+2026-10-02 23:37 UTC，包含父任务共用 `VerifyEnvironmentChangeCheckpoint` 及 normal pull 批量完整性修正后的实测：
+
+| 命令/范围 | 实际结果 |
+| --- | --- |
+| core-go `mise run test-race` | 全部有测试 Go 包通过，0 失败；包含 CLI、crypto、IPC、localkeys、localstate、mobilebridge、mobileworkflow、pairing、platform、syncclient |
+| core-go `mise exec -- go vet ./...` | 通过 |
+| core-go `mise run cross-compile` | darwin/arm64、linux/amd64、windows/amd64 默认 CGO=0 CLI 构建通过，仅忽略目录产物 |
+| 定向 crypto/来源/缓存/批量确认 | crypto 6 主/34 子、syncclient 8 主/46 子通过 |
+| protocol `mise run test` | 17/17 通过 |
+| 三份 `environment-origin-v1.json` | 字节相同；SHA256 `51b72e2f78e7cbedbb093194fb67f5db1f45b639f0d0a6d6538bee4ed3d9bfde` |
+| workspace `mise run check-source` | 基础秘密/个人路径检查通过；仍由父任务人工审公开范围 |
+| core-go / protocol `git diff --check` | 通过 |
+
+新增缓存回归：有效账本加额外缓存 Y、KV/GG/role/expiry/checkpoint/fingerprint 不符均拒绝；授权专用投影保留较低角色/较短期限可重启；同序号首次 ledger-empty→nonempty 仅所有其它 Cloud 数据精确不变时允许，Store 失败不留部分账本；已有 ledger 同序号替换或值/权限/checkpoint 改动拒绝。批量确认要求事务头和事务尾准确，所有原 inner ID/指纹及唯一序号覆盖完整范围；遗漏/错 hash/重复序号/越界/错头尾拒绝，规范签名不绑定的合法数组顺序不影响精确集合确认。
+
+workspace 来源负责人另外报告真实固定 SPAKE2/TLS/SQLite/已编译 cert3 daemon 联合测试普通 4.03 秒、race 5.58 秒通过；手机 Android 显式旧 v2 已构建 artifact 的 C/D 来源兼容 59.634 秒通过，由对应负责人记录。通用手机 Go 高层 A→B→Y→C/轮换/回执重启六场景通过，完整原生通用 UI 与新恢复来源连续链尚未由本组件运行。
+
+暂停收到纯 KV 轮换目前安全停用旧缓存来源，会恢复/移除托管配置，未完整满足暂停保配置；本次不把此边界标为完成。具体剩余状态分离及不放宽门槛的设计见 [ENVIRONMENT-ORIGIN.md](ENVIRONMENT-ORIGIN.md)。

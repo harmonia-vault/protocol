@@ -81,7 +81,7 @@ targetRow = [environmentId,authorityHash]
 
 路径最多 32 项，Admin 证据和目标分别最多 256 项，完整解码输入与规范证明编码分别最多 262,144 字节。输入解码拒绝未知字段和尾随 JSON；传输仍须限流和单次短时挑战。这里不声称已经增加 JSON 重复字段专用解析器。
 
-本切片支持同环境、同 keyVersion 的根自授权→A 授 B Admin→B 授 C 链，以及继续包含既有 v2 双签节点的路径。根精确自签 Admin 可以作为对应环境/版本的无父来源，但仍不能单独证明服务端当前接受状态。非根创建新环境和跨 keyVersion 轮换需要精确的已签 `EnvironmentChange` 证据来建立新来源；此切片尚未实现该扩展，缺相应来源时保持拒绝。撤销后的历史公钥不能删除成无法验历史的目录条目，但也不能因为保留历史公钥恢复当前权限。
+本切片支持同环境、同 keyVersion 的根自授权→A 授 B Admin→B 授 C 链，以及继续包含既有 v2 双签节点的路径。根精确自签 Admin 可以作为对应环境/版本的无父来源，但仍不能单独证明服务端当前接受状态。原 profile v1 不表达非根创建新环境和跨 keyVersion 轮换来源，缺证据时保持拒绝。显式新能力、证书 v3 与 proof v2 实现见 [环境来源证明](ENVIRONMENT-ORIGIN.md)；不能把该扩展静默加进旧 profile。撤销后的历史公钥不能删除成无法验历史的目录条目，但也不能因为保留历史公钥恢复当前权限。
 
 ## 真实测试结果
 
@@ -89,10 +89,10 @@ targetRow = [environmentId,authorityHash]
 
 `protocol` 的 `mise run test` 14/14 通过，其中新增 4 项使用 Node 标准 crypto 独立核对 Go 的固定数组、摘要、Ed25519 双签及证明篡改/域降级。向量的 transcript 为公开合成摘要，不证明真实 PAKE 成功。
 
-2026-10-02 20:33 UTC 后，本组件完成 Go 正式接入：`NewEnrollmentV2/ResumeEnrollmentV2`、`EnrollmentReceiptV2`、`NewPinnedVerifierV2(IssuerPinnedTrust)`；受保护 `TrustContext` 显式保存证书版本 2、空 `Managers` 和完整回执。仅允许同一回执的 accepted 状态从 false 变为 true，不能更换证明或全局公钥集合。后台重启复验精确本机双公钥及完整双签来源；新 CLI 配对使用 v2，旧 v1 待完成回执使用原域恢复。
+2026-10-02 20:33 UTC 后，本组件完成 Go 正式接入：`NewEnrollmentV2/ResumeEnrollmentV2`、`EnrollmentReceiptV2`、`NewPinnedVerifierV2(IssuerPinnedTrust)`；受保护 `TrustContext` 显式保存证书版本 2、空 `Managers` 和完整回执。仅允许同一回执的 accepted 状态从 false 变为 true，不能更换证明或全局公钥集合。当时后台重启复验精确本机双公钥及完整双签来源，新 CLI 配对使用 v2。随后来源切片的 fresh CLI 默认明确使用 v3，显式 `--certificate-version 2` 使用原 v2；已保存旧 v1/v2 回执只按原域恢复，不自动改版。
 
 实际 `syncclient/mise run test-issuer` 6 项主测试、21 个子测通过，其中四个主测试和 17 个子测是新增 v2 边界；真实 AEAD/HPKE 读取 A/B 历史、过期与撤销移除当前环境、未知环境/版本/签发者拒绝、回执精确本机钥绑定和严格 JSON/降级拒绝均覆盖。`test-native-enrollment` 2 项、5 个子测通过，v1 原有 2 个子测保留；v2 3 个子测用本机固定 BoringSSL 实际完成 SPAKE2、TLS、HPKE、正确/错误短码、显式降级拒绝和接受后结果未知的原回执恢复。`test-native-enrollment-race` 通过。这些测试的历史 A→B 资料来自公开合成向量，真实当前 B↔C transcript 由本机 PAKE 取得。
 
 受保护 CLI 的新增重启测试通过，包含 pending 禁止联网、原回执 accepted 后关闭/重开、证明替换/全局 Managers/本机公钥替换/v1 降级拒绝。`core-go/mise run test` 全包通过，三平台默认 CLI 交叉构建通过；完整 `test-race` 中本组件及 syncclient/cmd/localkeys 均通过，但该次 localipc 原有并发断线测试报告 `invalid IPC protocol` 失败，已交对应组件处理，不能将该次完整 race 标为通过。
 
-父任务另外报告真实 TypeScript/SQLite 与 Go SPAKE2 的 A→B→C 请求闭环通过，结果和后台进程验收以 workspace 记录为准；本组件不把父任务报告扩展为真实手机界面或跨平台验收。非根新环境与跨 keyVersion 来源仍保持拒绝，不能把以上通过结果宣传为生产可用。
+父任务另外报告真实 TypeScript/SQLite 与 Go SPAKE2 的 A→B→C 请求闭环通过，结果和后台进程验收以 workspace 记录为准；本组件不把父任务报告扩展为真实手机界面或跨平台验收。本表的旧 profile 非根新环境与跨 keyVersion 来源仍拒绝；新 profile 的后续结果见环境来源文档。不能把局部通过结果宣传为生产可用。
