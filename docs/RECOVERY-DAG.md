@@ -1,6 +1,6 @@
 # 重复恢复的平坦来源图合同
 
-本文先作为待审阅的实施合同。现有 `issuer-recovery-v1`、Proof2、Proof3、恢复 transition-v1/recovered-v1 的类型、规范字节与向量保持原义。本合同的密码学实现与 HTTP、手机、CLI 接入分别验证；保存本文不代表这些新入口已经可用。
+本文是已审阅的实施合同，密码学内核验证结果见 [本批测试证据](RECOVERY-DAG-TEST-EVIDENCE.md)。现有 `issuer-recovery-v1`、Proof2、Proof3、恢复 transition-v1/recovered-v1 的类型、规范字节与向量保持原义。本合同的密码学实现与 HTTP、手机、CLI 接入分别验证；保存本文不代表这些新入口已经可用。
 
 ## 必须完成的用户路径
 
