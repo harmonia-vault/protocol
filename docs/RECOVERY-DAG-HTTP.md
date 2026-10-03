@@ -23,4 +23,4 @@
 
 账户安全权威仅存账号事务状态；D1 保持目录职责。原初始化或已接受来源历史缺失的旧状态不能从目录重建 pin。账号已进入 DAG 状态后，旧恢复和旧入网路由拒绝绕过；旧 parser 不能吞 P4。
 
-这是实验性接口。当前纵链实现连续恢复；manager-reanchor 新入口、P4 授权/环境管理控制及移动 UI 仍有后续接线门槛。Node/Workers 合成签包测试与 Go 真实 HPKE/原生 PAKE 联合测试需分别记录范围。
+这是实验性接口。当前纵链实现连续恢复；P4 环境控制与 CRUD 合同见 [P4 环境操作](P4-ENVIRONMENTS.md)；manager-reanchor 新入口、P4 授权管理控制及移动 UI 仍有后续接线门槛。Node/Workers 合成签包测试与 Go 真实 HPKE/原生 PAKE 联合测试需分别记录范围。
