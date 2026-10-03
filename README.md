@@ -11,7 +11,7 @@ Harmonia 的版本化线协议、确定签名编码、威胁模型及 Go/TypeScr
 - [设备配对](docs/PAIRING.md)：固定 BoringSSL draft02 profile、双向密钥确认、中继及入网证书。
 - [恢复与轮换](docs/RECOVERY.md)：受限恢复会话、新码重输证明、完整封套和可信根原子切换。
 - [环境来源证明](docs/ENVIRONMENT-ORIGIN.md)：创建/轮换并列权限来源、证书 v3 与受保护证据账本。
-- [恢复授权连续链草案](docs/RECOVERY-AUTHORITY-DESIGN.md)：原初始化锚、两种轮换授权与显式恢复设备登记，尚未实现。
+- [恢复授权连续链](docs/RECOVERY-AUTHORITY-DESIGN.md)：原初始化锚、两种轮换授权、显式设备双签与 proof3/v4 合成互操作；真实恢复产品入口仍在接线。
 - [实际测试证据](docs/TEST-EVIDENCE.md)：已通过测试及未跑门槛。
 - `typescript/wire.ts`：无依赖、可供 Node/Workers 使用的规范编码器。
 - `vectors/`：公开合成测试数据；包含管理/写操作、设备持钥、初始化、入网、恢复与环境生命周期签名编码。

@@ -1,6 +1,6 @@
-# 恢复授权连续链设计草案
+# 恢复授权连续链协议与实施边界
 
-状态：下一批实现合同，供父任务与服务端共同复核；本批不修改现有恢复轮换、入网或证明 profile。本文没有任何已实现或已测试承诺。
+状态：新独立 Go 密码学类型、严格解码器、用途签名和来源图已实现，Go/Node 合成向量已通过。旧 profile 未改。服务器原子路由、移动端内存会话、完整新码回填和真实手机→CLI 恢复入网仍在接线，不能将本页当作产品完整流程已通过的证明。
 
 ## 目标与信任锚
 
@@ -10,7 +10,7 @@
 
 后续恢复公钥的每次过渡都必须保留可验证的授权来源。新恢复签名只证明持有新种子派生的签名钥，不能单独证明旧恢复权限交给了新公钥。既有仅新码签名的 `recovery-rotation/v1` 历史不能被重新解释为这种连续证据。
 
-拟新增独立能力 `issuer-recovery-v1`、证明 profile `harmonia/issuer-proof/v3`、证书版本 `4` 和独立恢复过渡/恢复设备入网路由。旧 profile、证书与路由保持严格原 schema；未知能力、缺过渡或旧记录不得静默升级、补签或降级。
+使用新增独立能力 `issuer-recovery-v1`、证明 profile `harmonia/issuer-proof/v3`、证书版本 `4` 和独立恢复过渡/恢复设备入网路由。旧 profile、证书与路由保持严格原 schema；未知能力、缺过渡或旧记录不得静默升级、补签或降级。
 
 ## 过渡提案与固定签名包
 
@@ -29,7 +29,7 @@
 
 签名原文是固定域 `harmonia/recovery-authority-transition/v1`，随后按上述字段顺序排列的 UTF-8 JSON 字符串数组。签名、摘要和数组规范沿用既有协议，签名采用成熟标准 Ed25519；不增加密码原语或自行设计曲线运算。所有授权方与新恢复钥均签同一原文，不能把不同用途或不同封套清单的签名拼接。
 
-完整 `environmentManifest` 为按 ASCII environmentId 升序排列的 `[environmentId,keyVersion]` 字符串行数组，仅包含接受前所有当前环境；完整 `authoritySet` 为同顺序的 `[environmentId,keyVersion,grantGeneration,expiresAt,authorityHash]` 行数组；`envelopes` 为同顺序的 `[environmentId,keyVersion,envelope]` 行数组。各 hash 使用独立引用域及完整规范行数组 SHA256；签名同时绑定三个集合，不能将权限集合和封套集合指向不同环境。issuerEvidenceHash 冻结标准证明完整规范字节与其 profile，不能只引用未验证的候选 hash。精确引用域在本文后半部固定，下一批实现须提供 Go/Node 静态向量。
+HTTP 的 environmentManifest、authoritySet、envelopes 使用下文对应的对象数组；以下行数组仅用于固定摘要编码。完整 `environmentManifest` 的规范行是按 ASCII environmentId 升序排列的 `[environmentId,keyVersion]` 字符串行数组，仅包含接受前所有当前环境；完整 `authoritySet` 的规范行是同顺序的 `[environmentId,keyVersion,grantGeneration,expiresAt,authorityHash]` 行数组；`envelopes` 的规范行是同顺序的 `[environmentId,keyVersion,envelope]` 行数组。各 hash 使用独立引用域及完整规范行数组 SHA256；签名同时绑定三个集合，不能将权限集合和封套集合指向不同环境。issuerEvidenceHash 冻结标准证明完整规范字节与其 profile，不能只引用未验证的候选 hash。精确引用域在本文后半部固定，公开合成 Go/Node 静态向量见下文。
 
 HTTP 完成包附原提案、所引用 manifest、完整封套清单、必要控制面证明、授权签名和新恢复持钥签名。challengeId/nonce/operationId/sessionHash/旧恢复代际/expectedSequence 均由本次短时单次操作绑定。客户端重建固定签名原文，不盲签服务器返回数组。原操作 ID、签名包、封套和内容 hash 在首次提交前受保护持久化；断网结果不明先查原 ID，不生成新 nonce 或新包重复切换。
 
@@ -61,7 +61,7 @@ HTTP 完成包附原提案、所引用 manifest、完整封套清单、必要控
 
 恢复过渡完成后仍是受限恢复状态，不能自动登记新管理手机。用户必须另外明确选择每个环境、RO/RW/Admin 角色及期限，并通过本机系统强认证保护新设备本地产生的独立 Ed25519/X25519 私钥。
 
-拟定 `RecoveredDeviceEnrollment`：
+`RecoveredDeviceEnrollment`：
 
 ```text
 {accountId,accountGeneration,recoveryGeneration,recoveryTransitionHash,
@@ -86,11 +86,11 @@ HTTP 完成包附原提案、所引用 manifest、完整封套清单、必要控
 
 ## 实施前门槛
 
-待审核准确 DTO、空值规则、全部引用域、proof v3/证书 v4 的恢复节点形式与归档边界；随后才做 Go/Node 确定向量、逐字段替换/跨代际/旧 nonce/缺全环境权限/回放/SQL 回滚/断网重查测试。真实手机强认证、重输新码和完全丢旧设备恢复入网还须独立端到端验收。现有生产入口继续拒绝未经该新方案验证的恢复管理设备登记。
+Go 已验证原初始化双签、完整权限/封套引用、两种过渡授权、明确旧 v1 差异重连、恢复设备两签/实际 HPKE、proof v3 到 v4 配对子设备、逐字段替换/跨代际/回放和严格 JSON 拒绝。SQL 回滚、断网查询/原包重试、完整新码回填和完全丢旧设备的真实手机入网仍须独立验收。现有产品入口继续拒绝未经新流程完整接受和下发的恢复管理设备登记。
 
 ## DTO、引用域和空值冻结
 
-以下是下一批的明确实现合同，尚未实现；当前 profile 完全不变。
+以下是新 profile 的固定实现合同；旧 profile 完全不变。
 
 过渡标量在原提案末尾增加 `chainMode,legacyStateHash`。固定签名数组为域加前述 22 个标量、chainMode、legacyStateHash，共 25 项。`chainMode` 仅 `continuous` 或 `manager-reanchor`：
 
@@ -130,7 +130,7 @@ legacyStateHash = H(['harmonia/recovery-legacy-state/v1',oldRecoveryGeneration,
 
 ## 新证明与恢复设备节点
 
-下一批 `IssuerRecoveryProof` 精确字段为：
+`IssuerRecoveryProof` 精确字段为：
 
 ```text
 {profile,accountId,accountGeneration,trustRoot,initialization,
@@ -146,11 +146,11 @@ profile 固定 `harmonia/issuer-proof/v3`。initialization 保存原双签 DTO `
 恢复设备完成包精确为：
 
 ```text
-{enrollment,selectedRights,grants,issuerEvidence,envelopes,
- recoverySignature,deviceSignature}
+{certificateVersion,capabilities,enrollment,selectedRights,grants,
+ issuerEvidence,envelopes,recoverySignature,deviceSignature}
 ```
 
-enrollment 使用前述 17 标量和固定域。selectedRights 行 `[environmentId,keyVersion,role,expiresAt]` 严格按 environmentId 升序；grants 是对应新设备自签授权；envelopes 行 `[environmentId,keyVersion,envelope]`，与 grants 内的新设备 HPKE 封套精确相同。摘要为：
+certificateVersion 固定字符串 `"4"`，capabilities 固定 `["issuer-recovery-v1"]`，不得省略或自动降级。enrollment 使用前述 17 标量和固定域。selectedRights 行 `[environmentId,keyVersion,role,expiresAt]` 严格按 environmentId 升序；grants 是对应新设备自签授权；envelopes 行 `[environmentId,keyVersion,envelope]`，与 grants 内的新设备 HPKE 封套精确相同。摘要为：
 
 ```text
 selectedRightsHash = H(['harmonia/recovered-device-rights/v1',selectedRightsRows])
@@ -182,3 +182,28 @@ Begin 不自动轮换；正常流程仍为一次完整旧码输入→受限→�
 App 被杀或 TTL 到期后，私钥句柄不能从磁盘恢复。重启可依据已密封原签包查询已接受结果，不能签新过渡或新设备授权；若要继续新授权，用户重新开始输入对应有效恢复码。软件钥短时驻留进程内存，逐操作强认证和尽力清理不代表始终在硬件内或保证运行时所有副本彻底擦除。v1 断链时即使持有当前码，也不建立 old-recovery 普通客户端来源。
 
 下一批必须新增正常流程一次旧码/完整新码回填、签后擦钥、unknown 原包重试、kill/restart 不恢复私钥、跨账号/gen/epoch/instance、单次 nonce、TTL/墙钟回退、busy/cancel/logout/失效及新设备未显式完成始终受限的负例；本批未跑这些新接口。
+
+## HTTP 挑战和原操作查询
+
+新独立路由明确要求 `capability=issuer-recovery-v1`：
+
+- `POST /v1/accounts/:id/recovery-authority-challenges`：请求精确 `{operationId,authorizationKind,chainMode}`。响应固定 challengeId、32 字节 nonce、120 秒 expiresAt、sessionHash、expectedSequence、previousTransitionHash、旧恢复代际/两公钥以及完整 environmentManifest、authoritySet、issuerEvidence、legacyState、originalInitialization、transitions。它们是候选材料，客户端须先独立验证原锚和全部引用，不盲签 signingPayload。
+- `POST /v1/accounts/:id/recovery-authority-transitions`：提交前述完整九字段原包。响应 `{sequence,replayed,transitionHash,contentHash}`；contentHash 精确等于本文完整 transitionHash。
+- `GET /v1/accounts/:id/recovery-authority-transitions/:operationId`：未接受返回 `{operationId,accepted:false}`；已接受返回同操作 ID、accepted:true、sequence、contentHash、transitionHash。结果不明时先查原 ID；不能把 unknown 当拒绝或另签新 nonce。
+
+同 ID 的挑战上下文不可变；使用当前 bound device session 或受限恢复 session，账号/恢复代际、链尾、nonce、expectedSequence 和全当前集合在事务内重查。过渡成功只改变恢复公钥、封套和链尾，不登记设备。恢复设备挑战/完成/查询的路由由服务端适配冻结后追加，不拿普通登录 token 充当恢复权限。
+
+## 已实现密码学切片与未接部分
+
+新 Go 入口都在 `core-go/cryptox` 独立文件；不提供任意字节签名服务，不在这些类型中保存私钥：
+
+- `VerifyRecoveryInitialization` 验原 root 与原恢复钥双签，只产生公开的 `VerifiedRecoveryAuthority`。`VerifyAcceptedRecoveryTransition` 返回新的不可变链尾；历史记录不以当前时钟重新授予或否定当前权利。
+- `SignOldRecoveryTransition` / `SignAllAdminRecoveryTransition` 验证完整提案后签授权；`SignNewRecoveryTransition` 先验证同一原文的已有授权签名，再签新钥持有证明。禁止恢复公钥跨用途重复或重新使用已见旧恢复公钥。
+- `SignRecoveredDeviceByRecovery` 签用户明确选择；`SignRecoveredDeviceAfterHPKE` 先验恢复签名，再解开全部精确绑定的 HPKE 封套，尽力清临时环境钥后才签设备。`VerifyAcceptedRecoveredDevice` 只接受原 selectedRights 精确签包。
+- `VerifyIssuerRecoveryEvidence` 复验原初始化、过渡、恢复设备双签、显式 tagged 归档路径、Admin 委派和环境 origin 双父边。原 root 双钥不移动；恢复初始授权不能冒充 root genesis。`VerifyCompletedEnrollmentV4` 先校验调用者本地实际 PAKE 确认的双钥/context/transcript，再验证完整 proof；待批准缺新设备签名不能视为完成。
+
+本批过渡和恢复设备包内的接受前 `issuerEvidence` 仍明确限定 `harmonia/issuer-proof/v2`，支持原 paired 管理者和第一次恢复所需的已有环境控制来源。新 `IssuerRecoveryProof` 则可验证恢复设备及其后 v4 配对子设备。恢复设备将来作为全环境 Admin 轮换者、或它创建/轮换环境之后再恢复时，需要显式支持嵌入 v3 的独立 union 接口；本批尚未接这段，必须 fail closed，不能把 v3 塞入旧 v2 parser 或无证据补公钥。
+
+向量仅包含合成 seed、公开公钥、签名、封套和固定测试元数据：[`recovery-authority-v1.json`](../vectors/recovery-authority-v1.json)、[`issuer-recovery-v1.json`](../vectors/issuer-recovery-v1.json)。公开 seed 只供复现；生成向量中的 HPKE 随机封套后冻结原包，Go 和 Node 独立复验相同规范字节、摘要和确定性 Ed25519 签名。Node 复验标准 HKDF 用途派生，不新增密码原语。
+
+实测：Go 新切片 12 个主测试/130 个子测试通过（0.616 秒），含原初始化替换、24/17 个签名标量逐字段替换、缺全权限、断链、回放、旧钥回用、错误 HPKE 和 schema 歧义。协议 Node 全部 23 个测试通过，其中 6 项新恢复向量/来源测试。这里没有声称上述内存恢复句柄、真实 PAKE 传输、Android 认证/回填、HTTP/SQL 接受或产品离线重启已由这些单测验证。

@@ -118,3 +118,23 @@ Linux 原生 SPAKE2、Windows cgo ABI、iOS 真机/模拟器配对均未跑。An
 workspace 来源负责人另外报告真实固定 SPAKE2/TLS/SQLite/已编译 cert3 daemon 联合测试普通 4.03 秒、race 5.58 秒通过；手机 Android 显式旧 v2 已构建 artifact 的 C/D 来源兼容 59.634 秒通过，由对应负责人记录。通用手机 Go 高层 A→B→Y→C/轮换/回执重启六场景通过，完整原生通用 UI 与新恢复来源连续链尚未由本组件运行。
 
 暂停收到纯 KV 轮换目前安全停用旧缓存来源，会恢复/移除托管配置，未完整满足暂停保配置；本次不把此边界标为完成。具体剩余状态分离及不放宽门槛的设计见 [ENVIRONMENT-ORIGIN.md](ENVIRONMENT-ORIGIN.md)。
+
+
+### 恢复连续授权密码学切片
+
+2026-10-03，新独立 profile 的实测（没有把 crypto 单测写成手机完整恢复验收）：
+
+| 命令/范围 | 实际结果 |
+| --- | --- |
+| core-go/cryptox `mise run test-recovery-authority` | 12 个主测试、130 个子测试通过；定向普通测试 0.616 秒 |
+| protocol `mise run test` | 全部 23/23 通过，其中 6 个新增恢复互操作/来源主测试 |
+| core-go `mise run test-race` | 全部有测试 Go 包通过，0 失败；新增恢复 crypto 所在包 6.709 秒 |
+| core-go `mise exec -- go vet ./...` | 通过 |
+| core-go `mise run cross-compile` | darwin/arm64、linux/amd64、windows/amd64 默认 CGO=0 CLI 构建通过；不是安装包、没有运行新 native 恢复流程 |
+| workspace `mise run check-source` | 基础源码秘密/个人路径检查通过；合成 seed 与密文公开范围另经人工确认 |
+
+Go/Node 独立重算 25 项恢复过渡、18 项恢复设备证书、12 项 proof3、16 项 v4 配对证书、完整集合引用摘要、标准 Ed25519 签名与 HKDF 用途派生。Go 还用成熟 HPKE 实际打开新设备全部封套，拒绝错误封套、旧公钥复用、原初始化替换、V1 断链凭当前码逃逸、缺全环境 Admin、待批准当完成、角色扩张、来源替换/回放和严格 JSON 歧义。来源图正例保留原 root，恢复设备仅选 Y Admin，再由它批准 F 仅 Y RO；该单测未运行 SPAKE transport。
+
+静态向量 [`recovery-authority-v1.json`](../vectors/recovery-authority-v1.json)、[`issuer-recovery-v1.json`](../vectors/issuer-recovery-v1.json) 分别在 core-go/testdata 与 protocol/vectors 冻结相同内容。Node 从公开合成 seed 重新产生相同 Ed25519 签名，Go 实际复验冻结向量；没有用户真实码、私钥或凭据。
+
+新 HTTP/SQLite 原子挑战/完成、原包断网重试、移动原生仅内存签钥句柄、完整新码回填、显式角色选择、相同 pull/AES 保存、真实手机恢复后管理 CLI 与普通客户端新 profile 接线，仍须由对应组件和联合验收证明。包内接受前 issuerEvidence 当前明确 V2，恢复设备后续 ALLAdmin 或它创建/轮换后的再次恢复所需 V3 union 尚未接；相关操作保持拒绝。详见 [恢复连续授权合同](RECOVERY-AUTHORITY-DESIGN.md)。
