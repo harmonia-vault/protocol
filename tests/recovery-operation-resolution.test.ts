@@ -23,7 +23,7 @@ test('transition挑战规范摘要用确定字段，不序列化对象；old-rec
  // 原初始化/records的规范字节已由成熟DAG向量独立测试；本片摘要把它们作为已固定字节输入。
  assert.equal(x.emptyAdminHash,h(['harmonia/recovery-admin-authorities/v1',[]]));
  const manifest=h(['harmonia/recovery-environment-manifest/v1',t.environmentManifest.map((e:any)=>[e.environmentId,e.keyVersion])]);
- const fields=['harmonia/recovery-operation-challenge/v1','transition-v2',x.accountId,t.accountGeneration,t.operationId,t.challengeId,t.nonce,String(t.expiresAt),t.sessionHash,t.authorizationKind,t.chainMode,t.authorizerDeviceId,t.expectedSequence,t.previousTransitionHash,t.oldRecoveryGeneration,t.oldRecoverySigningPublicKey,t.oldRecoveryReceivingPublicKey,manifest,x.emptyAdminHash,'',x.dependencyBasisHash];
+ const fields=['harmonia/recovery-operation-challenge/v1','transition-v2',x.accountId,t.accountGeneration,t.operationId,t.challengeId,t.nonce,String(t.expiresAt),t.sessionHash,t.authorizationKind,t.authorizerDeviceId,t.expectedSequence,t.previousTransitionHash,t.oldRecoveryGeneration,t.oldRecoverySigningPublicKey,t.oldRecoveryReceivingPublicKey,manifest,x.emptyAdminHash,'',x.dependencyBasisHash];
  assert.equal(h(fields),x.challengeHash);assert(t.issuerEvidence===null&&t.authoritySet.length===0);assert.equal(initialization.sequence,1);
  const altered=[...fields];altered[4]='another-operation';assert.notEqual(h(altered),x.challengeHash);
 });
